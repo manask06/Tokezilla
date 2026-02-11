@@ -1,11 +1,11 @@
 import { Layout } from '@/components/Layout';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <>
       <Layout />
-      <Toaster />
+      <Toaster position="top-right" />
     </>
   );
 }

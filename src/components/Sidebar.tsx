@@ -1,64 +1,32 @@
-import { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TokenList } from '@/components/TokenList';
 import { useTokenStore } from '@/store/tokenStore';
-import type { Token, TokenGroup } from '@/types/tokens';
+import type { TokenGroup } from '@/types/tokens';
 
-const tokenFilterByGroup: Record<TokenGroup, (token: Token) => boolean> = {
-  colors: (token) => token.$type === 'color',
-  spacing: (token) => token.$type === 'dimension',
-  typography: (token) =>
-    token.$type === 'fontFamily' ||
-    token.$type === 'fontSize' ||
-    token.$type === 'fontWeight' ||
-    token.$type === 'lineHeight' ||
-    token.$type === 'letterSpacing',
-};
+interface SidebarProps {
+  selectedTokenId: string | null;
+  onSelectToken: (tokenId: string) => void;
+  onCreateToken: () => void;
+  onDeleteToken: (tokenId: string) => void;
+}
 
-export function Sidebar() {
-  const [searchTerm, setSearchTerm] = useState('');
+export function Sidebar({
+  selectedTokenId,
+  onSelectToken,
+  onCreateToken,
+  onDeleteToken,
+}: SidebarProps) {
   const tokens = useTokenStore((state) => state.tokens);
   const selectedTokenGroup = useTokenStore((state) => state.selectedTokenGroup);
   const setSelectedTokenGroup = useTokenStore(
     (state) => state.setSelectedTokenGroup,
   );
-  const addToken = useTokenStore((state) => state.addToken);
 
-  const visibleTokens = useMemo(
-    () =>
-      tokens
-        .filter(tokenFilterByGroup[selectedTokenGroup])
-        .filter((token) =>
-          token.name.toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
-    [searchTerm, selectedTokenGroup, tokens],
-  );
-
-  const handleAddDummyToken = () => {
-    addToken({
-      name: `primary-${tokens.length + 1}`,
-      $value: '#2563eb',
-      $type: 'color',
-      $description: 'Dummy token for persistence test',
-    });
-  };
+  const colorTokens = tokens.filter((token) => token.$type === 'color');
 
   return (
-    <div className="flex h-full flex-col p-4">
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Tokens</h2>
-        <p className="text-sm text-muted-foreground">{tokens.length} tokens</p>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        <Input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search tokens..."
-          aria-label="Search tokens"
-        />
-
+    <div className="flex h-full flex-col">
+      <div className="border-b border-slate-200 p-3 dark:border-slate-700">
         <Tabs
           value={selectedTokenGroup}
           onValueChange={(value) => setSelectedTokenGroup(value as TokenGroup)}
@@ -71,42 +39,19 @@ export function Sidebar() {
         </Tabs>
       </div>
 
-      <div className="mt-4 flex-1 overflow-y-auto rounded-md border bg-background p-3">
-        {tokens.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No tokens yet. Create your first token!
-          </p>
-        ) : visibleTokens.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No tokens in this group yet.
-          </p>
-        ) : (
-          <ul className="space-y-2" aria-label="Token list">
-            {visibleTokens.map((token) => (
-              <li
-                key={token.id}
-                className="rounded-md border border-slate-200 bg-slate-50 p-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-              >
-                <p className="font-medium">{token.name}</p>
-                <p className="text-xs text-muted-foreground">{token.$type}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <Button className="w-full" variant="default">
-          + New Token
-        </Button>
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={handleAddDummyToken}
-        >
-          Add Dummy Token
-        </Button>
-      </div>
+      {selectedTokenGroup === 'colors' ? (
+        <TokenList
+          tokens={colorTokens}
+          selectedTokenId={selectedTokenId}
+          onSelectToken={onSelectToken}
+          onCreateToken={onCreateToken}
+          onDeleteToken={onDeleteToken}
+        />
+      ) : (
+        <div className="p-4 text-sm text-muted-foreground">
+          This module currently supports color token management.
+        </div>
+      )}
     </div>
   );
 }
