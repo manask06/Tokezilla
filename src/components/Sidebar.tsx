@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TokenList } from '@/components/TokenList';
 import { useTokenStore } from '@/store/tokenStore';
-import type { TokenGroup } from '@/types/tokens';
+import type { Token, TokenGroup } from '@/types/tokens';
 
 interface SidebarProps {
   selectedTokenId: string | null;
@@ -23,6 +23,45 @@ export function Sidebar({
   );
 
   const colorTokens = tokens.filter((token) => token.$type === 'color');
+  const spacingTokens = tokens.filter((token) => token.$type === 'dimension');
+  const typographyTokens = tokens.filter(
+    (token) =>
+      token.$type === 'typography' ||
+      token.$type === 'fontFamily' ||
+      token.$type === 'fontSize' ||
+      token.$type === 'fontWeight' ||
+      token.$type === 'lineHeight',
+  );
+
+  const listConfigByGroup: Record<
+    TokenGroup,
+    {
+      tokens: Token[];
+      label: string;
+      placeholder: string;
+      ariaLabel: string;
+    }
+  > = {
+    colors: {
+      tokens: colorTokens,
+      label: 'Color Tokens',
+      placeholder: 'Search colors...',
+      ariaLabel: 'Search color tokens',
+    },
+    spacing: {
+      tokens: spacingTokens,
+      label: 'Spacing Tokens',
+      placeholder: 'Search spacing...',
+      ariaLabel: 'Search spacing tokens',
+    },
+    typography: {
+      tokens: typographyTokens,
+      label: 'Typography Tokens',
+      placeholder: 'Search typography...',
+      ariaLabel: 'Search typography tokens',
+    },
+  };
+  const activeListConfig = listConfigByGroup[selectedTokenGroup];
 
   return (
     <div className="flex h-full flex-col">
@@ -39,19 +78,16 @@ export function Sidebar({
         </Tabs>
       </div>
 
-      {selectedTokenGroup === 'colors' ? (
-        <TokenList
-          tokens={colorTokens}
-          selectedTokenId={selectedTokenId}
-          onSelectToken={onSelectToken}
-          onCreateToken={onCreateToken}
-          onDeleteToken={onDeleteToken}
-        />
-      ) : (
-        <div className="p-4 text-sm text-muted-foreground">
-          This module currently supports color token management.
-        </div>
-      )}
+      <TokenList
+        tokens={activeListConfig.tokens}
+        tokenLabel={activeListConfig.label}
+        searchPlaceholder={activeListConfig.placeholder}
+        searchAriaLabel={activeListConfig.ariaLabel}
+        selectedTokenId={selectedTokenId}
+        onSelectToken={onSelectToken}
+        onCreateToken={onCreateToken}
+        onDeleteToken={onDeleteToken}
+      />
     </div>
   );
 }

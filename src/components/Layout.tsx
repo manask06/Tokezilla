@@ -5,6 +5,7 @@ import { PreviewPanel } from '@/components/PreviewPanel';
 import { Sidebar } from '@/components/Sidebar';
 import { TokenEditor } from '@/components/TokenEditor';
 import { useTokenStore } from '@/store/tokenStore';
+import type { TokenType, TypographyValue } from '@/types/tokens';
 
 const THEME_STORAGE_KEY = 'tokezilla-ui-theme';
 
@@ -20,6 +21,7 @@ export function Layout() {
   const addToken = useTokenStore((state) => state.addToken);
   const updateToken = useTokenStore((state) => state.updateToken);
   const deleteToken = useTokenStore((state) => state.deleteToken);
+  const selectedTokenGroup = useTokenStore((state) => state.selectedTokenGroup);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
@@ -50,11 +52,12 @@ export function Layout() {
   };
 
   const handleSaveToken = (values: {
+    kind: 'color' | 'dimension' | 'typography';
     name: string;
-    value: string;
+    value: string | TypographyValue;
     description?: string | undefined;
   }) => {
-    const normalizedDescription = values.description?.trim();
+    const normalizedDescription = values.description?.trim() || undefined;
     const descriptionPatch =
       normalizedDescription && normalizedDescription.length > 0
         ? { $description: normalizedDescription }
@@ -64,6 +67,7 @@ export function Layout() {
       updateToken(selectedToken.id, {
         name: values.name,
         $value: values.value,
+        $type: values.kind as TokenType,
         ...descriptionPatch,
       });
       toast.success('Token updated');
@@ -73,7 +77,7 @@ export function Layout() {
     addToken({
       name: values.name,
       $value: values.value,
-      $type: 'color',
+      $type: values.kind,
       ...descriptionPatch,
     });
     setIsCreateMode(false);
@@ -134,6 +138,7 @@ export function Layout() {
           <section className="flex-1 bg-white dark:bg-slate-800">
             <TokenEditor
               selectedToken={selectedToken}
+              selectedTokenGroup={selectedTokenGroup}
               isCreateMode={isCreateMode}
               onSave={handleSaveToken}
               onCancel={handleCancel}

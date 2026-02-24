@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Pencil, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,18 +15,54 @@ import type { Token } from '@/types/tokens';
 
 interface TokenListProps {
   tokens: Token[];
+  tokenLabel: string;
+  searchPlaceholder: string;
+  searchAriaLabel: string;
   selectedTokenId: string | null;
   onSelectToken: (tokenId: string) => void;
   onCreateToken: () => void;
   onDeleteToken: (tokenId: string) => void;
 }
 
-function getTokenColor(token: Token): string {
-  return typeof token.$value === 'string' ? token.$value : '#94a3b8';
+function getTokenVisual(token: Token): { style: CSSProperties; shape: string } {
+  if (token.$type === 'color') {
+    return {
+      style: {
+        backgroundColor:
+          typeof token.$value === 'string' ? token.$value : '#94a3b8',
+      },
+      shape: 'rounded-full',
+    };
+  }
+
+  if (token.$type === 'dimension') {
+    const dimensionValue =
+      typeof token.$value === 'string' ? token.$value : '16px';
+    return {
+      style: {
+        width: '24px',
+        height: '12px',
+        backgroundColor: '#0f172a',
+        transform: `scaleX(${Math.min(1.5, Number.parseFloat(dimensionValue) / 16 || 1)})`,
+      },
+      shape: 'rounded-sm',
+    };
+  }
+
+  return {
+    style: {
+      background:
+        'linear-gradient(135deg, rgb(30 41 59) 0%, rgb(71 85 105) 50%, rgb(148 163 184) 100%)',
+    },
+    shape: 'rounded-md',
+  };
 }
 
 export function TokenList({
   tokens,
+  tokenLabel,
+  searchPlaceholder,
+  searchAriaLabel,
   selectedTokenId,
   onSelectToken,
   onCreateToken,
@@ -56,7 +93,7 @@ export function TokenList({
   return (
     <div className="flex h-full flex-col p-4">
       <div>
-        <h2 className="text-lg font-semibold">Color Tokens</h2>
+        <h2 className="text-lg font-semibold">{tokenLabel}</h2>
         <p className="text-sm text-muted-foreground">{tokens.length} tokens</p>
       </div>
 
@@ -66,20 +103,21 @@ export function TokenList({
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
           className="pl-9"
-          placeholder="Search by token name..."
-          aria-label="Search color tokens"
+          placeholder={searchPlaceholder}
+          aria-label={searchAriaLabel}
         />
       </div>
 
       <div className="mt-4 flex-1 overflow-y-auto rounded-md border bg-background p-2">
         {filteredTokens.length === 0 ? (
           <div className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-muted-foreground dark:border-slate-700">
-            No color tokens yet. Create your first token!
+            No tokens yet. Create your first token!
           </div>
         ) : (
           <ul className="space-y-1" aria-label="Color token list">
             {filteredTokens.map((token) => {
               const isActive = selectedTokenId === token.id;
+              const visual = getTokenVisual(token);
 
               return (
                 <li key={token.id}>
@@ -96,8 +134,8 @@ export function TokenList({
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
                     >
                       <span
-                        className="size-6 rounded-full border border-slate-300 dark:border-slate-600"
-                        style={{ backgroundColor: getTokenColor(token) }}
+                        className={`size-6 border border-slate-300 dark:border-slate-600 ${visual.shape}`}
+                        style={visual.style}
                         aria-hidden
                       />
                       <span className="truncate text-sm font-medium">
