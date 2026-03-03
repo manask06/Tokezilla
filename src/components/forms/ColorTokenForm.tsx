@@ -14,9 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useTokenStore } from '@/store/tokenStore';
 import type { Token } from '@/types/tokens';
+import { extractReferenceName, isTokenReference } from '@/utils/tokenResolver';
 
-const tokenNameRegex = /^[a-zA-Z0-9_-]+$/;
+const tokenNameRegex = /^[a-zA-Z0-9_.-]+$/;
+const referenceTokenRegex = /^\{[a-zA-Z0-9_.-]+\}$/;
 const hexRegex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const rgbRegex =
   /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/;
@@ -33,7 +36,10 @@ const colorTokenSchema = z.object({
     .min(1, 'Color value is required')
     .refine(
       (value) =>
-        hexRegex.test(value) || rgbRegex.test(value) || hslRegex.test(value),
+        hexRegex.test(value) ||
+        rgbRegex.test(value) ||
+        hslRegex.test(value) ||
+        referenceTokenRegex.test(value),
       'Use a valid HEX, RGB, or HSL color',
     ),
   description: z.string().optional(),
@@ -118,6 +124,7 @@ export function ColorTokenForm({
   onDelete,
 }: ColorTokenFormProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const tokens = useTokenStore((state) => state.tokens);
   const form = useForm<ColorTokenFormValues>({
     resolver: zodResolver(colorTokenSchema),
     defaultValues: {
@@ -128,9 +135,11 @@ export function ColorTokenForm({
   });
 
   useEffect(() => {
+    const initialValue =
+      typeof token?.$value === 'string' ? token.$value : '#2563EB';
     form.reset({
       name: token?.name ?? '',
-      value: typeof token?.$value === 'string' ? token.$value : '#2563EB',
+      value: initialValue,
       description: token?.$description ?? '',
     });
   }, [form, token]);
@@ -144,6 +153,14 @@ export function ColorTokenForm({
   const handleSubmit = form.handleSubmit((values) => {
     onSave(values);
   });
+
+  const referenceCandidates = useMemo(
+    () =>
+      tokens.filter((item) => item.id !== token?.id).map((item) => item.name),
+    [token?.id, tokens],
+  );
+  const isReference = isTokenReference(currentValue);
+  const referenceInput = extractReferenceName(currentValue) ?? '';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -167,27 +184,81 @@ export function ColorTokenForm({
         <label htmlFor="token-value" className="mb-1 block text-sm font-medium">
           Color Value
         </label>
-        <div className="mb-3 flex items-center gap-3">
-          <span
-            className="size-10 rounded-full border border-slate-300 dark:border-slate-600"
-            style={{ backgroundColor: pickerHexValue }}
-            aria-label="Live color preview"
-          />
-          <HexColorPicker
-            color={pickerHexValue}
-            onChange={(hexValue) => {
-              form.setValue('value', hexValue, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
+        <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={isReference}
+            onChange={(event) => {
+              const enabled = event.target.checked;
+              if (enabled) {
+                const nextReference =
+                  referenceInput || referenceCandidates[0] || '';
+                form.setValue(
+                  'value',
+                  nextReference ? `{${nextReference}}` : '',
+                  {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  },
+                );
+              } else if (isTokenReference(currentValue)) {
+                form.setValue('value', '#2563EB', {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }
             }}
           />
-        </div>
-        <Input
-          id="token-value"
-          {...form.register('value')}
-          placeholder="#2563EB"
-        />
+          Reference Token
+        </label>
+        {isReference ? (
+          <div className="space-y-2">
+            <Input
+              list="color-token-reference-options"
+              placeholder="colors.blue.500"
+              value={referenceInput}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                form.setValue('value', nextValue ? `{${nextValue}}` : '', {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+            />
+            <datalist id="color-token-reference-options">
+              {referenceCandidates.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 flex items-center gap-3">
+              <span
+                className="size-10 rounded-full border border-slate-300 dark:border-slate-600"
+                style={{ backgroundColor: pickerHexValue }}
+                aria-label="Live color preview"
+              />
+              <HexColorPicker
+                color={pickerHexValue}
+                onChange={(hexValue) => {
+                  form.setValue('value', hexValue, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            </div>
+            <Input
+              id="token-value"
+              {...form.register('value')}
+              placeholder="#2563EB"
+            />
+          </>
+        )}
+        {isReference ? (
+          <p className="mt-1 text-xs text-muted-foreground">→ {currentValue}</p>
+        ) : null}
         {form.formState.errors.value ? (
           <p className="mt-1 text-xs text-red-600">
             {form.formState.errors.value.message}

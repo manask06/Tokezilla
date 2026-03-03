@@ -20,6 +20,9 @@ interface TokenStoreState {
   updateToken: (id: string, updates: Partial<Token>) => void;
   deleteToken: (id: string) => void;
   createTheme: (name: string) => void;
+  renameTheme: (themeId: string, name: string) => void;
+  duplicateTheme: (themeId: string, nextName?: string) => void;
+  deleteTheme: (themeId: string) => void;
   switchTheme: (themeId: string) => void;
   setSelectedTokenGroup: (group: TokenGroup) => void;
 }
@@ -97,6 +100,65 @@ export const useTokenStore = create<TokenStoreState>()(
 
           return {
             themes: [...state.themes, newTheme],
+          };
+        }),
+
+      renameTheme: (themeId, name) =>
+        set((state) => ({
+          themes: state.themes.map((theme) =>
+            theme.id === themeId ? { ...theme, name } : theme,
+          ),
+        })),
+
+      duplicateTheme: (themeId, nextName) =>
+        set((state) => {
+          const baseTheme = state.themes.find((theme) => theme.id === themeId);
+          if (!baseTheme) {
+            return state;
+          }
+
+          const duplicatedTheme: ThemeSet = {
+            ...baseTheme,
+            id: crypto.randomUUID(),
+            name: nextName?.trim() || `${baseTheme.name} Copy`,
+            isDefault: false,
+            tokens: baseTheme.tokens.map((token) => ({ ...token })),
+          };
+
+          return {
+            themes: [...state.themes, duplicatedTheme],
+          };
+        }),
+
+      deleteTheme: (themeId) =>
+        set((state) => {
+          const themeToDelete = state.themes.find(
+            (theme) => theme.id === themeId,
+          );
+          if (
+            !themeToDelete ||
+            themeToDelete.isDefault ||
+            state.themes.length <= 1
+          ) {
+            return state;
+          }
+
+          const nextThemes = state.themes.filter(
+            (theme) => theme.id !== themeId,
+          );
+          if (state.activeThemeId !== themeId) {
+            return { themes: nextThemes };
+          }
+
+          const fallbackTheme = nextThemes[0];
+          if (!fallbackTheme) {
+            return state;
+          }
+
+          return {
+            themes: nextThemes,
+            activeThemeId: fallbackTheme.id,
+            tokens: fallbackTheme.tokens,
           };
         }),
 

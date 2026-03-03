@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/select';
 import { useTokenStore } from '@/store/tokenStore';
 import type { TypographyValue } from '@/types/tokens';
+import { resolveAllTokens } from '@/utils/tokenResolver';
 
 function asTypographyValue(value: unknown): TypographyValue {
   if (value && typeof value === 'object') {
@@ -20,9 +21,20 @@ export function PreviewPanel() {
   const activeThemeId = useTokenStore((state) => state.activeThemeId);
   const switchTheme = useTokenStore((state) => state.switchTheme);
   const tokens = useTokenStore((state) => state.tokens);
-  const colorTokens = tokens.filter((token) => token.$type === 'color');
-  const dimensionTokens = tokens.filter((token) => token.$type === 'dimension');
-  const typographyTokens = tokens.filter(
+  let resolvedTokens = tokens;
+  let resolveError: string | null = null;
+  try {
+    resolvedTokens = resolveAllTokens(tokens);
+  } catch (error) {
+    resolveError =
+      error instanceof Error ? error.message : 'Failed to resolve aliases';
+  }
+
+  const colorTokens = resolvedTokens.filter((token) => token.$type === 'color');
+  const dimensionTokens = resolvedTokens.filter(
+    (token) => token.$type === 'dimension',
+  );
+  const typographyTokens = resolvedTokens.filter(
     (token) => token.$type === 'typography',
   );
 
@@ -49,6 +61,9 @@ export function PreviewPanel() {
       </div>
 
       <div className="mt-6 space-y-3 rounded-lg border border-dashed border-slate-300 p-4 dark:border-slate-700">
+        {resolveError ? (
+          <p className="text-xs text-red-600">{resolveError}</p>
+        ) : null}
         <p className="text-sm text-muted-foreground">Live colors preview</p>
         <div className="grid grid-cols-2 gap-2">
           {colorTokens.slice(0, 6).map((token) => (

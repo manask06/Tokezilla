@@ -1,4 +1,5 @@
 import { Menu, Moon, Sun } from 'lucide-react';
+import { ThemeManager } from '@/components/ThemeManager';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
@@ -28,9 +29,7 @@ export function Header({
       </div>
 
       <nav aria-label="Header actions" className="flex items-center gap-2">
-        <span className="hidden text-sm text-muted-foreground sm:inline">
-          Theme Dropdown (placeholder)
-        </span>
+        <ThemeManager />
         <Button
           variant="outline"
           size="icon"

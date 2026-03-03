@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,8 +14,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Token } from '@/types/tokens';
+import { isTokenReference } from '@/utils/tokenResolver';
 
-const tokenNameRegex = /^[a-zA-Z0-9_-]+$/;
+const tokenNameRegex = /^[a-zA-Z0-9_.-]+$/;
+const referenceTokenRegex = /^\{[a-zA-Z0-9_.-]+\}$/;
 const sizeRegex = /^-?(?:\d+|\d*\.\d+)(?:px|rem|em|%)$/;
 const lineHeightRegex = /^(?:normal|-?(?:\d+|\d*\.\d+)(?:px|rem|em|%|))$/;
 
@@ -29,9 +31,13 @@ const typographyTokenSchema = z
     fontSize: z
       .string()
       .optional()
-      .refine((value) => !value || sizeRegex.test(value), {
-        message: 'Use value like 16px, 1rem, or 100%',
-      }),
+      .refine(
+        (value) =>
+          !value || sizeRegex.test(value) || referenceTokenRegex.test(value),
+        {
+          message: 'Use value like 16px, 1rem, or 100%',
+        },
+      ),
     fontWeight: z
       .string()
       .optional()
@@ -41,9 +47,15 @@ const typographyTokenSchema = z
     lineHeight: z
       .string()
       .optional()
-      .refine((value) => !value || lineHeightRegex.test(value), {
-        message: 'Use normal, 1.5, 24px, or 150%',
-      }),
+      .refine(
+        (value) =>
+          !value ||
+          lineHeightRegex.test(value) ||
+          referenceTokenRegex.test(value),
+        {
+          message: 'Use normal, 1.5, 24px, or 150%',
+        },
+      ),
     description: z.string().optional(),
   })
   .refine(
@@ -120,6 +132,11 @@ export function TypographyTokenForm({
     });
   }, [form, token]);
 
+  const watchedFontSize =
+    useWatch({ control: form.control, name: 'fontSize' }) ?? '';
+  const watchedLineHeight =
+    useWatch({ control: form.control, name: 'lineHeight' }) ?? '';
+
   return (
     <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
       <div>
@@ -159,6 +176,11 @@ export function TypographyTokenForm({
             Font Size
           </label>
           <Input id="typography-size" {...form.register('fontSize')} />
+          {isTokenReference(watchedFontSize) ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              → {watchedFontSize}
+            </p>
+          ) : null}
           {form.formState.errors.fontSize ? (
             <p className="mt-1 text-xs text-red-600">
               {form.formState.errors.fontSize.message}
@@ -187,6 +209,11 @@ export function TypographyTokenForm({
             Line Height
           </label>
           <Input id="typography-line-height" {...form.register('lineHeight')} />
+          {isTokenReference(watchedLineHeight) ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              → {watchedLineHeight}
+            </p>
+          ) : null}
           {form.formState.errors.lineHeight ? (
             <p className="mt-1 text-xs text-red-600">
               {form.formState.errors.lineHeight.message}

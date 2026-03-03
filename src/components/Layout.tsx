@@ -5,7 +5,8 @@ import { PreviewPanel } from '@/components/PreviewPanel';
 import { Sidebar } from '@/components/Sidebar';
 import { TokenEditor } from '@/components/TokenEditor';
 import { useTokenStore } from '@/store/tokenStore';
-import type { TokenType, TypographyValue } from '@/types/tokens';
+import type { Token, TokenType, TypographyValue } from '@/types/tokens';
+import { resolveAllTokens } from '@/utils/tokenResolver';
 
 const THEME_STORAGE_KEY = 'tokezilla-ui-theme';
 
@@ -63,11 +64,44 @@ export function Layout() {
         ? { $description: normalizedDescription }
         : {};
 
+    const valuePayload = values.value;
+    const typePayload = values.kind as TokenType;
+    const previewToken: Token = selectedToken
+      ? {
+          ...selectedToken,
+          name: values.name,
+          $value: valuePayload,
+          $type: typePayload,
+          ...descriptionPatch,
+        }
+      : {
+          id: crypto.randomUUID(),
+          name: values.name,
+          $value: valuePayload,
+          $type: typePayload,
+          ...descriptionPatch,
+        };
+
+    const previewTokens = selectedToken
+      ? tokens.map((token) =>
+          token.id === selectedToken.id ? previewToken : token,
+        )
+      : [...tokens, previewToken];
+
+    try {
+      resolveAllTokens(previewTokens);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Invalid token reference';
+      toast.error(message);
+      return;
+    }
+
     if (selectedToken) {
       updateToken(selectedToken.id, {
         name: values.name,
-        $value: values.value,
-        $type: values.kind as TokenType,
+        $value: valuePayload,
+        $type: typePayload,
         ...descriptionPatch,
       });
       toast.success('Token updated');
@@ -76,8 +110,8 @@ export function Layout() {
 
     addToken({
       name: values.name,
-      $value: values.value,
-      $type: values.kind,
+      $value: valuePayload,
+      $type: typePayload,
       ...descriptionPatch,
     });
     setIsCreateMode(false);
