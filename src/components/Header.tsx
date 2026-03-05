@@ -6,12 +6,14 @@ interface HeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onToggleMobileSidebar: () => void;
+  onOpenExport: () => void;
 }
 
 export function Header({
   isDarkMode,
   onToggleDarkMode,
   onToggleMobileSidebar,
+  onOpenExport,
 }: HeaderProps) {
   return (
     <div className="flex h-full items-center justify-between px-4 md:px-6">
@@ -42,7 +44,7 @@ export function Header({
             <Moon className="h-4 w-4" />
           )}
         </Button>
-        <Button variant="outline" disabled>
+        <Button variant="outline" onClick={onOpenExport}>
           Export
         </Button>
         <Button variant="outline" disabled>

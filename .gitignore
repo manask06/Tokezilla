@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 changelog
+
+# Local visual/export artifacts (keep out of git)
+day*-*.png
+day*-artifacts/

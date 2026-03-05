@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { ExportModal } from '@/components/ExportModal';
 import { Header } from '@/components/Header';
 import { PreviewPanel } from '@/components/PreviewPanel';
 import { Sidebar } from '@/components/Sidebar';
@@ -18,6 +19,7 @@ export function Layout() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const tokens = useTokenStore((state) => state.tokens);
   const addToken = useTokenStore((state) => state.addToken);
   const updateToken = useTokenStore((state) => state.updateToken);
@@ -144,6 +146,7 @@ export function Layout() {
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen((open) => !open)}
+          onOpenExport={() => setIsExportModalOpen(true)}
         />
       </header>
 
@@ -184,6 +187,11 @@ export function Layout() {
           </section>
         </main>
       </div>
+
+      <ExportModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+      />
     </div>
   );
 }
