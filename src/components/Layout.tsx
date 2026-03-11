@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { ExportModal } from '@/components/ExportModal';
 import { Header } from '@/components/Header';
+import { ImportModal } from '@/components/ImportModal';
 import { PreviewPanel } from '@/components/PreviewPanel';
 import { Sidebar } from '@/components/Sidebar';
 import { TokenEditor } from '@/components/TokenEditor';
@@ -20,6 +21,7 @@ export function Layout() {
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const tokens = useTokenStore((state) => state.tokens);
   const addToken = useTokenStore((state) => state.addToken);
   const updateToken = useTokenStore((state) => state.updateToken);
@@ -147,6 +149,7 @@ export function Layout() {
           onToggleDarkMode={toggleDarkMode}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen((open) => !open)}
           onOpenExport={() => setIsExportModalOpen(true)}
+          onOpenImport={() => setIsImportModalOpen(true)}
         />
       </header>
 
@@ -161,14 +164,28 @@ export function Layout() {
         </aside>
 
         {isMobileSidebarOpen ? (
-          <aside className="absolute inset-y-0 left-0 z-20 w-72 border-r border-slate-200 bg-slate-50 lg:hidden dark:border-slate-700 dark:bg-slate-900">
-            <Sidebar
-              selectedTokenId={selectedTokenId}
-              onSelectToken={handleSelectToken}
-              onCreateToken={handleCreateToken}
-              onDeleteToken={(tokenId) => handleDelete(tokenId)}
+          <>
+            <button
+              type="button"
+              aria-label="Close token sidebar"
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="absolute inset-0 z-10 bg-black/30 lg:hidden"
             />
-          </aside>
+            <aside className="absolute inset-y-0 left-0 z-20 w-72 border-r border-slate-200 bg-slate-50 lg:hidden dark:border-slate-700 dark:bg-slate-900">
+              <Sidebar
+                selectedTokenId={selectedTokenId}
+                onSelectToken={(tokenId) => {
+                  handleSelectToken(tokenId);
+                  setIsMobileSidebarOpen(false);
+                }}
+                onCreateToken={() => {
+                  handleCreateToken();
+                  setIsMobileSidebarOpen(false);
+                }}
+                onDeleteToken={(tokenId) => handleDelete(tokenId)}
+              />
+            </aside>
+          </>
         ) : null}
 
         <main className="flex flex-1 flex-col xl:flex-row">
@@ -191,6 +208,10 @@ export function Layout() {
       <ExportModal
         open={isExportModalOpen}
         onOpenChange={setIsExportModalOpen}
+      />
+      <ImportModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
       />
     </div>
   );

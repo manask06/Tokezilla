@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import JSZip from 'jszip';
-import { Check, ClipboardCopy, Download } from 'lucide-react';
+import { Check, ClipboardCopy, Download, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -184,6 +184,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   );
   const [activePreviewTab, setActivePreviewTab] =
     useState<ExportPlatform>('css');
+  const [isCopying, setIsCopying] = useState(false);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
 
   const handleOpenStateChange = (nextOpen: boolean) => {
     if (nextOpen) {
@@ -285,11 +287,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       return;
     }
 
+    setIsCopying(true);
     try {
       await navigator.clipboard.writeText(activePreview.content);
       toast.success('Export snippet copied.');
     } catch {
       toast.error('Clipboard copy failed.');
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -335,6 +340,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     }
 
     try {
+      setIsDownloadingZip(true);
       const zip = new JSZip();
       for (const file of exportFiles) {
         zip.file(file.path, file.content);
@@ -348,6 +354,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       toast.success('ZIP downloaded.');
     } catch {
       toast.error('ZIP generation failed.');
+    } finally {
+      setIsDownloadingZip(false);
     }
   };
 
@@ -486,10 +494,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           <Button
             variant="outline"
             onClick={handleCopy}
-            disabled={!activePreview}
+            disabled={!activePreview || isCopying}
           >
-            <ClipboardCopy className="mr-2 h-4 w-4" />
-            Copy
+            {isCopying ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ClipboardCopy className="mr-2 h-4 w-4" />
+            )}
+            {isCopying ? 'Copying...' : 'Copy'}
           </Button>
           <Button
             variant="outline"
@@ -501,10 +513,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </Button>
           <Button
             onClick={handleDownloadZip}
-            disabled={!hasFiles || Boolean(exportError)}
+            disabled={!hasFiles || Boolean(exportError) || isDownloadingZip}
           >
-            <Download className="mr-2 h-4 w-4" />
-            Download ZIP
+            {isDownloadingZip ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {isDownloadingZip ? 'Preparing ZIP...' : 'Download ZIP'}
           </Button>
         </DialogFooter>
       </DialogContent>

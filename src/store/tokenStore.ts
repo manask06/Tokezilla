@@ -24,7 +24,54 @@ interface TokenStoreState {
   duplicateTheme: (themeId: string, nextName?: string) => void;
   deleteTheme: (themeId: string) => void;
   switchTheme: (themeId: string) => void;
+  importThemes: (
+    themes: Array<{
+      name: string;
+      isDefault?: boolean;
+      tokens: Omit<Token, 'id'>[];
+    }>,
+    mode: 'merge' | 'replace',
+  ) => void;
   setSelectedTokenGroup: (group: TokenGroup) => void;
+}
+
+function createUniqueThemeName(
+  baseName: string,
+  usedNames: Set<string>,
+): string {
+  const normalized = baseName.trim() || 'Imported Theme';
+  let candidate = normalized;
+  let suffix = 2;
+
+  while (usedNames.has(candidate.toLowerCase())) {
+    candidate = `${normalized} ${suffix}`;
+    suffix += 1;
+  }
+
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
+}
+
+function buildThemeSet(
+  payload: {
+    name: string;
+    isDefault?: boolean;
+    tokens: Omit<Token, 'id'>[];
+  },
+  usedNames: Set<string>,
+): ThemeSet {
+  const name = createUniqueThemeName(payload.name, usedNames);
+  const tokens = payload.tokens.map((token) => ({
+    ...token,
+    id: crypto.randomUUID(),
+  }));
+
+  return {
+    id: crypto.randomUUID(),
+    name,
+    isDefault: Boolean(payload.isDefault),
+    tokens,
+  };
 }
 
 const withUpdatedActiveTheme = (
@@ -174,6 +221,62 @@ export const useTokenStore = create<TokenStoreState>()(
           return {
             activeThemeId: themeId,
             tokens: selectedTheme.tokens,
+          };
+        }),
+
+      importThemes: (themes, mode) =>
+        set((state) => {
+          if (themes.length === 0) {
+            return state;
+          }
+
+          if (mode === 'replace') {
+            const usedNames = new Set<string>();
+            const replacementThemes = themes.map((theme) =>
+              buildThemeSet(theme, usedNames),
+            );
+            if (replacementThemes.length === 0) {
+              return state;
+            }
+
+            const hasDefaultTheme = replacementThemes.some(
+              (theme) => theme.isDefault,
+            );
+            if (!hasDefaultTheme) {
+              const firstTheme = replacementThemes[0];
+              if (!firstTheme) {
+                return state;
+              }
+              firstTheme.isDefault = true;
+            }
+
+            const activeTheme =
+              replacementThemes.find((theme) => theme.isDefault) ??
+              replacementThemes[0];
+            if (!activeTheme) {
+              return state;
+            }
+
+            return {
+              themes: replacementThemes,
+              activeThemeId: activeTheme.id,
+              tokens: activeTheme.tokens,
+            };
+          }
+
+          const usedNames = new Set(
+            state.themes.map((theme) => theme.name.toLowerCase()),
+          );
+          const mergedThemes = themes.map((theme) => {
+            const nextTheme = buildThemeSet(theme, usedNames);
+            return {
+              ...nextTheme,
+              isDefault: false,
+            };
+          });
+
+          return {
+            themes: [...state.themes, ...mergedThemes],
           };
         }),
 

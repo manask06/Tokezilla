@@ -89,6 +89,7 @@ export function TokenList({
       ),
     [debouncedSearch, tokens],
   );
+  const hasSearch = debouncedSearch.length > 0;
 
   return (
     <div className="flex h-full flex-col p-4">
@@ -111,10 +112,12 @@ export function TokenList({
       <div className="mt-4 flex-1 overflow-y-auto rounded-md border bg-background p-2">
         {filteredTokens.length === 0 ? (
           <div className="rounded-md border border-dashed border-slate-300 p-4 text-sm text-muted-foreground dark:border-slate-700">
-            No tokens yet. Create your first token!
+            {hasSearch
+              ? 'No tokens match this search.'
+              : 'No tokens yet. Create your first token!'}
           </div>
         ) : (
-          <ul className="space-y-1" aria-label="Color token list">
+          <ul className="space-y-1" aria-label={`${tokenLabel} list`}>
             {filteredTokens.map((token) => {
               const isActive = selectedTokenId === token.id;
               const visual = getTokenVisual(token);

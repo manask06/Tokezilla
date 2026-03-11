@@ -76,6 +76,7 @@ export function PreviewPanel() {
   const typographyTokens = resolvedTokens.filter(
     (token) => token.$type === 'typography',
   );
+  const hasResolvedTokens = resolvedTokens.length > 0;
 
   const primaryColorToken =
     pickTokenByName(colorTokens, ['primary', 'blue']) ?? colorTokens[0];
@@ -142,11 +143,18 @@ export function PreviewPanel() {
       </div>
 
       <div className="mt-4">
-        <label className="mb-2 block text-sm text-muted-foreground">
+        <label
+          htmlFor="preview-theme-select"
+          className="mb-2 block text-sm text-muted-foreground"
+        >
           Theme
         </label>
         <Select value={activeThemeId} onValueChange={switchTheme}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger
+            id="preview-theme-select"
+            aria-label="Select preview theme"
+            className="w-full"
+          >
             <SelectValue placeholder="Select theme" />
           </SelectTrigger>
           <SelectContent>
@@ -163,6 +171,12 @@ export function PreviewPanel() {
         <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300">
           {resolveError}
         </p>
+      ) : null}
+
+      {!resolveError && !hasResolvedTokens ? (
+        <div className="mt-4 rounded-md border border-dashed border-slate-300 p-4 text-sm text-muted-foreground dark:border-slate-700">
+          No tokens yet. Add tokens to see live component previews.
+        </div>
       ) : null}
 
       <section className="mt-5 space-y-3 rounded-lg border p-4">
@@ -218,7 +232,10 @@ export function PreviewPanel() {
           placeholder="Input preview"
         />
         <Textarea rows={3} placeholder="Textarea preview" />
-        <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600">
+        <select
+          aria-label="Preview select input"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600"
+        >
           <option>Option one</option>
           <option>Option two</option>
           <option>Option three</option>

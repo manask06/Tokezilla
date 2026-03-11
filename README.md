@@ -1,73 +1,155 @@
-# React + TypeScript + Vite
+# Tokezilla
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern Design Token Manager for creating, organizing, and exporting design tokens across multiple themes and platforms.
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Production URL: pending deploy (run `vercel --prod`)
+- Local dev: `http://localhost:5173`
 
-## React Compiler
+## Demo Video
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 2-minute walkthrough: pending recording
 
-## Expanding the ESLint configuration
+## What It Does
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Tokezilla lets you create, edit, organize, resolve, preview, import, and export design tokens across multiple themes.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Core capabilities
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Color, spacing/dimension, and typography token CRUD
+- Recursive alias support with circular reference detection
+- Multi-theme workflow (create/rename/duplicate/delete/switch)
+- Live component preview driven by generated CSS variables
+- Multi-platform export:
+  - CSS custom properties
+  - Tailwind `theme.extend`
+  - iOS Swift constants
+  - Android `colors.xml` + `dimens.xml`
+  - Nested W3C DTCG-style JSON
+- JSON import with schema validation and preview
+  - Supports Tokezilla app JSON and nested DTCG JSON
+  - Import modes: merge or replace
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+## Tech Stack
+
+- React 19
+- TypeScript 5 (strict mode)
+- Vite 7
+- Tailwind CSS 4
+- Zustand + persist middleware
+- zod + react-hook-form
+- shadcn/ui + Radix primitives
+- react-hot-toast
+- jszip
+
+## Getting Started
+
+### 1. Install
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Run dev server
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+npm run dev
 ```
+
+### 3. Build for production
+
+```bash
+npm run build
+```
+
+### 4. Lint and format
+
+```bash
+npm run lint
+npm run format
+```
+
+## Import JSON Formats
+
+### App format
+
+```json
+{
+  "themes": [
+    {
+      "name": "Light",
+      "isDefault": true,
+      "tokens": [
+        { "name": "colors.primary", "$type": "color", "$value": "#2563EB" }
+      ]
+    }
+  ]
+}
+```
+
+### DTCG-like nested format
+
+```json
+{
+  "$metadata": { "theme": "Light" },
+  "tokens": {
+    "colors": {
+      "primary": { "$type": "color", "$value": "#2563EB" }
+    }
+  }
+}
+```
+
+## Export Output
+
+Use Header -> Export to open Export Modal and generate files. Aliases are resolved before export.
+
+## Accessibility and UX Notes
+
+- Semantic layout (`header`, `main`, `section`, `aside`, `nav`)
+- Keyboard-accessible modal and upload zone interactions
+- ARIA labels on primary interactions
+- Toast feedback for all critical actions
+- Empty states, confirmations, and loading indicators included
+- Responsive behavior for desktop/tablet/mobile
+
+## Deployment
+
+### Vercel CLI
+
+```bash
+npx vercel --prod
+```
+
+### GitHub integration
+
+1. Push repository to GitHub
+2. Import project in Vercel
+3. Keep default Vite build settings
+
+## Lighthouse
+
+Run after deploy:
+
+```bash
+npx lighthouse <PRODUCTION_URL> --view
+```
+
+Target scores:
+
+- Performance: 90+
+- Accessibility: 90+
+- Best Practices: 90+
+- SEO: 90+
+
+## Why This Project
+
+I built Tokezilla to demonstrate real frontend production skills in one cohesive app:
+
+- type-safe UI architecture in React + TypeScript
+- state modeling and persistence with Zustand
+- schema-driven validation with zod
+- practical design-token workflows used by modern product teams
+- deployment readiness and export interoperability
+
